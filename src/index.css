@@ -9,3 +9,42 @@ button { cursor:pointer; }
 .grad-accent { background:linear-gradient(100deg,#2563eb 0%,#7c3aed 100%); }
 .page-title { @apply text-2xl font-bold tracking-tight text-slate-950; }
 .muted { @apply text-sm text-slate-500; }
+
+/* Tablet layout: compact rhythm, icon navigation rail, and wrapping toolbars. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  main.p-8 { padding: 1.5rem; }
+  main > div.flex.items-start.justify-between,
+  main > div.mt-7.flex.items-center.justify-between { flex-wrap: wrap; gap: 1rem; }
+  main > div.mt-7.flex.items-center.justify-between > div:last-child { margin-left: auto; }
+  main .card.p-7,
+  main .card.p-8 { padding: 1.5rem; }
+  main .grid.xl\:grid-cols-\[2fr_1fr\] { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Phone layout: single-column cards, scrollable controls, and touch-sized actions. */
+@media (max-width: 767px) {
+  main.p-8, main > section.p-8 { padding: 1rem; }
+  .page-title { font-size: 1.5rem; line-height: 2rem; }
+  main .px-9 { padding-left: 1.25rem; padding-right: 1.25rem; }
+  main .py-8 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+  main .text-3xl { font-size: 1.5rem; line-height: 2rem; }
+  main .text-5xl { font-size: 2.5rem; line-height: 1; }
+  main > div.flex.items-start.justify-between,
+  main > div.mt-7.flex.items-center.justify-between,
+  main .mb-6.flex.items-start.justify-between { flex-direction: column; align-items: stretch; gap: .875rem; }
+  main > div.flex.items-start.justify-between > button { width: 100%; }
+  main > div.mt-7.flex.items-center.justify-between > div:first-child { display: flex; max-width: 100%; overflow-x: auto; white-space: nowrap; }
+  main > div.mt-7.flex.items-center.justify-between > div:last-child { width: 100%; }
+  main > div.mt-7.flex.items-center.justify-between label { min-width: 0; flex: 1; }
+  main > div.mt-7.flex.items-center.justify-between input { width: 100%; }
+  main .mt-5.flex.gap-3 { flex-direction: column; }
+  main .mt-5.flex.gap-3 > button { justify-content: center; width: 100%; }
+  main section.my-9.grid { grid-template-columns: minmax(0, 1fr); gap: .75rem; margin: 1rem 0; }
+  main section.my-9.grid > * { border: 1px solid #e2e8f0; border-radius: .75rem; background: white; box-shadow: 0 1px 2px rgb(15 23 42 / .05); }
+  main .card.p-7, main .card.p-8 { padding: 1.25rem; }
+  main .card .h-72 { height: 15rem; }
+  main .card .h-96 { height: 17rem; }
+  main .grid.lg\:grid-cols-\[\.8fr_2fr\] { grid-template-columns: minmax(0, 1fr); }
+  main .mt-4.flex.gap-4 { flex-wrap: wrap; gap: .5rem 1rem; }
+  main > section.bg-gradient-to-r { padding: 2rem 1rem; }
+}
