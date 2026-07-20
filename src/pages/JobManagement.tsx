@@ -1,0 +1,1 @@
+export default function JobManagement(){return <main className="p-8"><h1 className="page-title">Job Management</h1><p className="muted mt-2">Create and manage your open positions.</p><div className="card mt-7 p-10 text-center text-slate-500">Your job listings will appear here.</div></main>}

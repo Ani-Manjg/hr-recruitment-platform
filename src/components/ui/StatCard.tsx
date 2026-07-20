@@ -1,0 +1,4 @@
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
+import type { Stat } from '../../types'
+
+export default function StatCard({stat}:{stat:Stat}) { const Icon=stat.icon; const color=stat.tone==='purple'?'text-violet-600':stat.tone==='blue'?'text-blue-600':'text-slate-500'; return <div className="min-w-0 px-5 py-3"><div className="mb-5 flex items-center justify-between"><Icon className={`size-5 ${color}`} strokeWidth={1.8}/><span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${stat.trend==='up'?'border-emerald-100 bg-emerald-50 text-emerald-600':'border-rose-100 bg-rose-50 text-rose-500'}`}>{stat.trend==='up'?<ArrowUpRight className="mr-0.5 size-3"/>:<ArrowDownRight className="mr-0.5 size-3"/>}{stat.change}</span></div><p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{stat.label}</p><p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{stat.value}</p></div> }
