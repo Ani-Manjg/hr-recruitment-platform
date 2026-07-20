@@ -2,6 +2,9 @@ import { FileText, UserCheck, UserMinus, Users } from 'lucide-react'
 import type { Candidate, PipelinePoint, Stat } from '../types'
 
 export const pipelineHistory: PipelinePoint[] = [
+  { month:'Jul', screened:38, shortlisted:21 }, { month:'Aug', screened:44, shortlisted:27 },
+  { month:'Sep', screened:41, shortlisted:24 }, { month:'Oct', screened:56, shortlisted:33 },
+  { month:'Nov', screened:51, shortlisted:31 }, { month:'Dec', screened:62, shortlisted:39 },
   { month:'Jan', screened:45, shortlisted:30 }, { month:'Feb', screened:52, shortlisted:35 },
   { month:'Mar', screened:49, shortlisted:32 }, { month:'Apr', screened:70, shortlisted:45 },
   { month:'May', screened:65, shortlisted:40 }, { month:'Jun', screened:85, shortlisted:55 },
