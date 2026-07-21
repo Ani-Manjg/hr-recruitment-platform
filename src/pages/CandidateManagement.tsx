@@ -1,8 +1,9 @@
 import { Clock3, Grid2X2, List, MapPin, Search, SlidersHorizontal, UserCheck, X } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { candidates } from '../data/mockData'
 import Badge from '../components/ui/Badge'
+import type { Candidate } from '../types'
 
 type CandidateTab = 'all' | 'shortlisted' | 'rejected'
 type SortOption = 'score-desc' | 'score-asc' | 'name' | 'experience'
@@ -25,7 +26,11 @@ export default function CandidateManagement() {
   const [search, setSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [comparisonOpen, setComparisonOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
+  const [addedCandidates, setAddedCandidates] = useState<Candidate[]>([])
+  const [form, setForm] = useState({ name: '', role: '', location: '', experience: '', skills: '' })
   const pageSize = 6
+  const allCandidates = [...candidates, ...addedCandidates]
 
   const selectTab = (nextTab: CandidateTab) => {
     setPage(1)
@@ -33,7 +38,7 @@ export default function CandidateManagement() {
     else setSearchParams({ tab: nextTab })
   }
 
-  const visibleCandidates = candidates.filter(candidate => {
+  const visibleCandidates = allCandidates.filter(candidate => {
     const matchesTab = tab === 'all' || (tab === 'rejected' ? candidate.status === 'archived' : candidate.status === tab)
     const term = search.trim().toLowerCase()
     const matchesSearch = !term || candidate.name.toLowerCase().includes(term) || candidate.skills.some(skill => skill.toLowerCase().includes(term))
@@ -47,13 +52,21 @@ export default function CandidateManagement() {
   })
   const pageCount = Math.max(1, Math.ceil(sortedCandidates.length / pageSize))
   const pageCandidates = sortedCandidates.slice((page - 1) * pageSize, page * pageSize)
-  const selectedCandidates = candidates.filter(candidate => selectedIds.includes(candidate.id))
+  const selectedCandidates = allCandidates.filter(candidate => selectedIds.includes(candidate.id))
   const toggleCandidate = (id: number) => setSelectedIds(current => current.includes(id) ? current.filter(item => item !== id) : current.length < 3 ? [...current, id] : current)
+  const addCandidate = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const skills = form.skills.split(',').map(skill => skill.trim()).filter(Boolean)
+    setAddedCandidates(current => [...current, { id: Math.max(...allCandidates.map(candidate => candidate.id)) + 1, name: form.name.trim(), role: form.role.trim(), location: form.location.trim(), experience: form.experience.trim(), skills, score: 0, status: 'active' }])
+    setForm({ name: '', role: '', location: '', experience: '', skills: '' })
+    setAddOpen(false)
+    setPage(1)
+  }
 
   return <main className="p-8">
     <div className="flex items-start justify-between">
       <div><h1 className="page-title">Candidate Management</h1><p className="muted mt-1">Analyze and manage talent in your recruitment pipeline with AI-driven ranking.</p></div>
-      <button className="grad-accent rounded-lg px-5 py-2.5 text-sm font-semibold text-white">+ Add Candidate</button>
+      <button onClick={() => setAddOpen(true)} className="grad-accent rounded-lg px-5 py-2.5 text-sm font-semibold text-white">+ Add Candidate</button>
     </div>
     <div className="mt-7 flex items-center justify-between">
       <div className="rounded-xl border border-slate-200 bg-slate-100 p-1 text-sm font-medium">
@@ -65,5 +78,6 @@ export default function CandidateManagement() {
     <div className="mt-6 flex items-center justify-center gap-3"><button disabled={page === 1} onClick={() => setPage(current => current - 1)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-[#f7f8fb] disabled:cursor-not-allowed disabled:opacity-40">Previous</button><span className="text-sm text-slate-500">Page {page} of {pageCount}</span><button disabled={page === pageCount} onClick={() => setPage(current => current + 1)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-[#f7f8fb] disabled:cursor-not-allowed disabled:opacity-40">Next</button></div>
     {selectedIds.length >= 2 && <button onClick={() => setComparisonOpen(true)} className="grad-accent fixed bottom-6 right-6 z-20 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-lg">Compare Selected ({selectedIds.length})</button>}
     {comparisonOpen && <div className="fixed inset-0 z-30 grid place-items-center bg-slate-950/40 p-4"><div className="max-h-[90vh] w-full max-w-5xl overflow-auto rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><div><h2 className="text-2xl font-bold">Candidate Comparison</h2><p className="mt-1 text-sm text-slate-500">Compare selected candidates side by side.</p></div><button onClick={() => setComparisonOpen(false)} aria-label="Close comparison" className="rounded-lg p-2 hover:bg-slate-100"><X className="size-5"/></button></div><div className="mt-6 overflow-x-auto"><table className="w-full min-w-160 text-left text-sm"><thead><tr className="border-b border-slate-200"><th className="p-3 font-semibold text-slate-500">Candidate</th>{selectedCandidates.map(candidate => <th key={candidate.id} className="p-3 text-base font-bold">{candidate.name}<span className="mt-1 block text-xs font-normal text-slate-500">{candidate.role}</span></th>)}</tr></thead><tbody>{[['Match score', selectedCandidates.map(candidate => `${candidate.score}%`)], ['Skills', selectedCandidates.map(candidate => candidate.skills.join(', '))], ['Experience', selectedCandidates.map(candidate => candidate.experience)], ['Education', selectedCandidates.map(() => 'Not provided')], ['Location', selectedCandidates.map(candidate => candidate.location)], ['Resume status', selectedCandidates.map(() => 'Resume received')]].map(([label, values]) => <tr key={label as string} className="border-b border-slate-100 last:border-0"><th className="whitespace-nowrap bg-slate-50 p-3 font-semibold text-slate-600">{label as string}</th>{(values as string[]).map((value, index) => <td key={index} className="p-3 text-slate-700">{value}</td>)}</tr>)}</tbody></table></div></div></div>}
+    {addOpen && <div className="fixed inset-0 z-30 grid place-items-center bg-slate-950/40 p-4"><form onSubmit={addCandidate} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><h2 className="text-2xl font-bold">Add Candidate</h2><button type="button" onClick={() => setAddOpen(false)} aria-label="Close add candidate form" className="rounded-lg p-2 hover:bg-slate-100"><X className="size-5"/></button></div><p className="mt-1 text-sm text-slate-500">This adds a candidate locally for the current session.</p><div className="mt-6 grid gap-4 sm:grid-cols-2">{([['name', 'Full name', 'text'], ['role', 'Position applied', 'text'], ['location', 'Location', 'text'], ['experience', 'Experience (for example, 4 years)', 'text'], ['skills', 'Skills (comma separated)', 'text']] as const).map(([field, label, type]) => <label key={field} className={`text-sm font-semibold ${field === 'skills' ? 'sm:col-span-2' : ''}`}>{label}<input required value={form[field]} type={type} onChange={event => setForm(current => ({ ...current, [field]: event.target.value }))} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 font-normal outline-none focus:border-blue-500"/></label>)}</div><div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setAddOpen(false)} className="rounded-xl border border-slate-200 px-5 py-2 text-sm font-semibold hover:bg-[#f7f8fb]">Cancel</button><button type="submit" className="grad-accent rounded-xl px-5 py-2 text-sm font-semibold text-white">Add Candidate</button></div></form></div>}
   </main>
 }
