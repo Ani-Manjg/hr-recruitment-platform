@@ -1,6 +1,7 @@
 import { Bell, Building2, Check, CheckCheck, ChevronDown, Mail, Menu, Pencil, Save, Search, Trash2, UserRound, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { candidates } from '../../data/mockData'
 
 const names: Record<string, string> = {
   '/': 'Dashboard',
@@ -41,6 +42,9 @@ const initialNotifications: Notification[] = [
 
 export default function Topbar({ onMenu }: { onMenu: () => void }) {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
   const [notifications, setNotifications] = useState(initialNotifications)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -52,13 +56,17 @@ export default function Topbar({ onMenu }: { onMenu: () => void }) {
   const [profileDraft, setProfileDraft] = useState(profile)
   const notificationRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLDivElement>(null)
   const unreadCount = notifications.filter(notification => !notification.read).length
   const initials = profile.name.split(' ').filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'TA'
   const profileIsValid = profileDraft.name.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileDraft.email.trim())
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const searchResults = normalizedQuery ? candidates.filter(candidate => [candidate.name, candidate.role, candidate.location, ...candidate.skills].some(value => value.toLowerCase().includes(normalizedQuery))).slice(0, 6) : []
 
   useEffect(() => {
     function closeOnOutsideClick(event: MouseEvent) {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) setNotificationsOpen(false)
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) setSearchOpen(false)
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setProfileOpen(false)
         setEditingProfile(false)
@@ -66,7 +74,11 @@ export default function Topbar({ onMenu }: { onMenu: () => void }) {
       }
     }
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setNotificationsOpen(false)
+      if (event.key === 'Escape') {
+        setNotificationsOpen(false)
+        setProfileOpen(false)
+        setSearchOpen(false)
+      }
     }
     document.addEventListener('mousedown', closeOnOutsideClick)
     document.addEventListener('keydown', closeOnEscape)
@@ -88,6 +100,12 @@ export default function Topbar({ onMenu }: { onMenu: () => void }) {
     setEditingProfile(false)
   }
 
+  function openCandidate(id: number) {
+    setSearchOpen(false)
+    setSearchQuery('')
+    navigate(`/candidates/${id}`)
+  }
+
   return <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:h-20 lg:px-8">
     <div className="flex min-w-0 items-center gap-3 text-sm">
       <button onClick={onMenu} aria-label="Open navigation" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden"><Menu className="size-5" /></button>
@@ -96,7 +114,15 @@ export default function Topbar({ onMenu }: { onMenu: () => void }) {
       <span className="hidden text-slate-500 sm:inline">Recruitment Overview</span>
     </div>
     <div className="flex items-center gap-3 lg:gap-5">
-      <label className="hidden h-11 w-56 items-center gap-2 rounded-xl border border-slate-200 px-4 text-slate-400 lg:flex xl:w-72"><Search className="size-4" /><input className="w-full bg-transparent text-sm outline-none" placeholder="Search candidates..." /></label>
+      <div className="relative" ref={searchRef}>
+        <button onClick={() => { setSearchOpen(open => !open); setNotificationsOpen(false); setProfileOpen(false) }} aria-label="Search candidates" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"><Search className="size-5" /></button>
+        <label className="hidden h-11 w-56 items-center gap-2 rounded-xl border border-slate-200 px-4 text-slate-400 transition focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 lg:flex xl:w-72"><Search className="size-4 shrink-0" /><input value={searchQuery} onFocus={() => setSearchOpen(true)} onChange={event => { setSearchQuery(event.target.value); setSearchOpen(true) }} onKeyDown={event => { if (event.key === 'Enter' && searchResults[0]) openCandidate(searchResults[0].id) }} className="w-full bg-transparent text-sm text-slate-700 outline-none" placeholder="Search candidates..." />{searchQuery && <button type="button" onClick={() => setSearchQuery('')} aria-label="Clear search" className="text-slate-400 hover:text-slate-700"><X className="size-3.5" /></button>}</label>
+        {searchOpen && <section aria-label="Candidate search" className="card fixed left-4 right-4 top-17 overflow-hidden shadow-xl sm:left-auto sm:right-6 sm:w-96 lg:absolute lg:right-0 lg:top-13">
+          <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3 lg:hidden"><Search className="size-4 text-slate-400" /><input autoFocus value={searchQuery} onChange={event => setSearchQuery(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && searchResults[0]) openCandidate(searchResults[0].id) }} className="w-full text-sm outline-none" placeholder="Search by name, role, skill..." /><button onClick={() => { setSearchQuery(''); setSearchOpen(false) }} aria-label="Close search"><X className="size-4 text-slate-400" /></button></div>
+          {!normalizedQuery ? <div className="px-5 py-8 text-center"><Search className="mx-auto size-7 text-slate-300" /><p className="mt-2 text-sm font-semibold text-slate-600">Find a candidate</p><p className="mt-1 text-xs text-slate-400">Search by name, role, location, or skill.</p></div> : searchResults.length ? <div className="max-h-96 overflow-y-auto py-2">{searchResults.map(candidate => <button key={candidate.id} onClick={() => openCandidate(candidate.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-blue-50"><div className="grid size-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-blue-100 to-violet-100 text-xs font-bold text-blue-700">{candidate.name.split(' ').map(part => part[0]).join('')}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-900">{candidate.name}</p><p className="truncate text-xs text-slate-500">{candidate.role} · {candidate.location}</p></div><span className="rounded-full bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-600">{candidate.score}%</span></button>)}</div> : <div className="px-5 py-8 text-center"><p className="text-sm font-semibold text-slate-600">No candidates found</p><p className="mt-1 text-xs text-slate-400">Try another name, role, location, or skill.</p></div>}
+          {searchResults.length > 0 && <div className="border-t border-slate-100 px-4 py-2 text-center text-[11px] text-slate-400">Press Enter to open the first result</div>}
+        </section>}
+      </div>
       <div className="relative" ref={notificationRef}>
         <button onClick={() => { setNotificationsOpen(open => !open); setProfileOpen(false); setEditingProfile(false) }} aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`} aria-expanded={notificationsOpen} className="relative rounded-lg p-2 text-slate-600 transition hover:bg-slate-100">
           <Bell className="size-5" />
