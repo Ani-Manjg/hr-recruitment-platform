@@ -1,0 +1,1 @@
+export default function Settings(){return <main className="p-8"><h1 className="page-title">Settings</h1><div className="card mt-7 p-8"><h2 className="font-bold">Workspace preferences</h2><p className="muted mt-2">Manage your TalentFlow HR account and team settings.</p></div></main>}
