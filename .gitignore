@@ -8,3 +8,6 @@ visily-multiscreens.pdf
 .env.local
 .env.*.local
 !.env.example
+backend/.env
+backend/dist
+backend/node_modules

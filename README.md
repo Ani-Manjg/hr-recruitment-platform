@@ -61,3 +61,10 @@ Vercel origin through credentialed CORS and use secure production cookies.
 - `npm run preview` - preview the production build
 
 The project currently has no lint or test scripts.
+
+## Backend
+
+The deployable API is in [`backend`](backend). It includes the Supabase migration,
+secure authentication, tenant-isolated business APIs, interview scheduling,
+notifications, statistics, audit logging, and Gemini CV analysis. See
+[`backend/README.md`](backend/README.md) for Supabase, local, and Render setup.
