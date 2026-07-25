@@ -50,7 +50,7 @@ service. For manual configuration use:
 
 ```text
 Root Directory: backend
-Build Command: npm ci && npm run build
+Build Command: npm ci --include=dev && npm run build
 Start Command: npm start
 Health Check Path: /health
 ```
