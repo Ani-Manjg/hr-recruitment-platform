@@ -9,5 +9,6 @@ import AIAnalysis from './pages/AIAnalysis'
 import Notifications from './pages/Notifications'
 import Settings from './pages/Settings'
 import Statistics from './pages/Statistics'
+import ProtectedRoute from './auth/ProtectedRoute'
 
-export default function App() { return <Routes><Route path="/login" element={<Login/>}/><Route element={<AppLayout/>}><Route index element={<Dashboard/>}/><Route path="candidates" element={<CandidateManagement/>}/><Route path="candidates/:id" element={<CandidateDetails/>}/><Route path="jobs" element={<JobManagement/>}/><Route path="ai-analysis" element={<AIAnalysis/>}/><Route path="statistics" element={<Statistics/>}/><Route path="notifications" element={<Notifications/>}/><Route path="settings" element={<Settings/>}/></Route><Route path="*" element={<Navigate to="/" replace/>}/></Routes> }
+export default function App() { return <Routes><Route path="/login" element={<Login/>}/><Route element={<ProtectedRoute/>}><Route element={<AppLayout/>}><Route index element={<Dashboard/>}/><Route path="candidates" element={<CandidateManagement/>}/><Route path="candidates/:id" element={<CandidateDetails/>}/><Route path="jobs" element={<JobManagement/>}/><Route path="ai-analysis" element={<AIAnalysis/>}/><Route path="statistics" element={<Statistics/>}/><Route path="notifications" element={<Notifications/>}/><Route path="settings" element={<Settings/>}/></Route></Route><Route path="*" element={<Navigate to="/" replace/>}/></Routes> }

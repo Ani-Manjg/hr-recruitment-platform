@@ -1,59 +1,63 @@
-# HR Recruitment Platform
+# TalentFlow HR frontend
 
-## Cloning and Running the Application
+React + TypeScript frontend for the TalentFlow recruitment API.
 
-Follow the steps below to clone the repository and run the application locally.
+## Environment
 
-### 1. Clone the repository
+Copy `.env.example` to `.env.local`:
 
-```bash
-git clone https://github.com/Ani-Manjg/hr-recruitment-platform.git
+```env
+VITE_API_URL=http://localhost:3000
 ```
 
-### 2. Enter the project directory
+`VITE_API_URL` is the backend origin without the `/api` suffix. Never place JWT
+secrets, database credentials, or AI provider keys in frontend environment
+variables.
 
-```bash
-cd hr-recruitment-platform
-```
+## Run locally
 
-### 3. Install the dependencies
+Start the completed backend in its repository using its documented command. It
+must listen on `http://localhost:3000`.
 
-```bash
+Then run the frontend:
+
+```powershell
 npm install
-```
-
-### 4. Start the development server
-
-```bash
 npm run dev
 ```
 
-After the development server starts, open the local URL shown in your terminal.
+Open `http://localhost:5173`.
 
-## Project Description
+## Connected features
 
-TalentFlow HR is a responsive recruitment management dashboard designed to help hiring teams organize and monitor their recruitment workflow. It brings candidate management, job tracking, recruitment analytics, notifications, interview scheduling, and AI-inspired candidate insights together in one interface.
+- Register, sign in, session restoration, sign out, and protected routes
+- In-memory access tokens, rotating HttpOnly-cookie refresh sessions, queued
+  refresh retries, and session-scoped CSRF rotation
+- Invitation registration and ADMIN-only invitation creation
+- Forgot-password, reset-password, and authenticated password changes
+- Editable user profiles with immediate authenticated-user updates
+- Company settings with ADMIN-only editing
+- User notification preferences
+- Job listing, search, status filtering, creation, editing, and deletion
+- Candidate server-side filters, sorting, pagination, creation, editing,
+  shortlisting, rejection, ADMIN-only deletion and retention purge, notes,
+  details, and comparison
+- Multipart PDF/DOC/DOCX résumé analysis and analyzed-candidate saving
+- Notifications and mark-read actions
+- Dashboard statistics and pipeline charts
+- Candidate search in the top navigation
+- Upcoming interview listing, UTC scheduling, and confirmed deletion
 
-The application includes:
+## Production
 
-- A dashboard with hiring statistics and recruitment pipeline charts
-- Candidate search, filtering, sorting, comparison, shortlisting, and detailed profiles
-- Job creation and job-status management
-- AI-style candidate analysis and match scoring
-- Interview scheduling stored in the browser
-- Recruitment statistics and data visualizations
-- Filterable hiring notifications
-- Profile, company, password, and notification settings
-- A responsive layout for desktop and smaller screens
+Set `VITE_API_URL` in Vercel to the public HTTPS origin of the deployed backend,
+then create a new production deployment. The backend must allow the production
+Vercel origin through credentialed CORS and use secure production cookies.
 
-This project is currently a frontend demonstration that uses mock recruitment data and browser-based state. It does not connect to a production backend, database, or real AI service.
+## Scripts
 
-## Technology Stack
+- `npm run dev` - development server
+- `npm run build` - strict TypeScript check and production build
+- `npm run preview` - preview the production build
 
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- React Router
-- Recharts
-- Lucide React
+The project currently has no lint or test scripts.

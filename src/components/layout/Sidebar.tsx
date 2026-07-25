@@ -3,6 +3,7 @@ import {
   LayoutGrid, LogOut, Settings, Users,
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../../auth/AuthContext'
 
 const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutGrid },
@@ -20,6 +21,7 @@ type SidebarProps = {
 }
 
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
+  const { logout } = useAuth()
   const itemClass = 'group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition md:justify-center md:px-2 lg:justify-start lg:gap-3 lg:px-4'
   const label = (text: string) => <>
     <span className={`whitespace-nowrap md:hidden ${collapsed ? 'lg:hidden' : 'lg:inline'}`}>{text}</span>
@@ -38,7 +40,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       </nav>
       <div className="mt-auto space-y-1 border-t border-slate-100 pt-5">
         <NavLink to="/settings" onClick={onMobileClose} className={`${itemClass} text-slate-500 hover:bg-slate-50`}><Settings className="size-5 shrink-0" />{label('Settings')}</NavLink>
-        <NavLink to="/login" onClick={onMobileClose} className={`${itemClass} text-slate-400 hover:bg-slate-50`}><LogOut className="size-5 shrink-0" />{label('Sign Out')}</NavLink>
+        <button type="button" onClick={() => { logout(); onMobileClose() }} className={`${itemClass} w-full text-slate-400 hover:bg-slate-50`}><LogOut className="size-5 shrink-0" />{label('Sign Out')}</button>
         <button type="button" onClick={onToggle} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} className={`${itemClass} hidden w-full text-slate-500 hover:bg-slate-50 hover:text-blue-600 lg:flex`}>
           {collapsed ? <ChevronRight className="size-5" /> : <><ChevronLeft className="size-5" /><span>Collapse sidebar</span></>}
         </button>

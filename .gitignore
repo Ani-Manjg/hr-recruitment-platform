@@ -3,3 +3,8 @@ dist/
 tmp/
 *.tsbuildinfo
 visily-multiscreens.pdf
+.vercel
+.env
+.env.local
+.env.*.local
+!.env.example

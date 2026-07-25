@@ -1,9 +1,31 @@
 import type { LucideIcon } from 'lucide-react'
 
+export type UserRole = 'ADMIN' | 'RECRUITER'
+export type LocationType = 'Remote' | 'Hybrid' | 'On-site'
+export type JobStatus = 'Open' | 'Closed' | 'Draft'
+export type ResumeStatus = 'New' | 'Screened' | 'Shortlisted' | 'Rejected' | 'Interviewing'
+export type User = { id:string; email:string; name:string; jobTitle:string|null; phone:string|null; avatarUrl:string|null; role:UserRole; companyId:string; companyName:string; createdAt:string }
+export type AuthResponse = { user:User; accessToken:string; csrfToken:string; expiresIn:string }
+export type RefreshResponse = { accessToken:string; csrfToken:string; expiresIn:string }
+export type InvitationResponse = { invitationToken:string; expiresInHours:number }
+export type Job = { id:string; title:string; department:string; location:string; locationType:LocationType; requiredSkills:string[]; requiredExperience:string; education:string; languages:string[]; status:JobStatus; applicants:number; postedDate:string }
+export type ExperienceEntry = { role:string; company:string; period:string }
+export type Candidate = { id:string; name:string; positionApplied:string; jobId:string; yearsExperience:number; skills:string[]; education:string; languages:string[]; location:string; locationType:LocationType; email:string; phone:string; resumeStatus:ResumeStatus; matchScore:number; availability:string; summary:string; strengths:string[]; weaknesses:string[]; experienceTimeline:ExperienceEntry[]; certificates:string[]; portfolio?:string; notes:string }
+export type Pagination = { page:number; limit:number; total:number; totalPages:number }
+export type PaginatedCandidates = { data:Candidate[]; pagination:Pagination }
+export type NotificationType = 'candidate' | 'application' | 'shortlist' | 'reject'
+export type NotificationItem = { id:string; type:NotificationType; title:string; detail:string; time:string; read:boolean; candidateId?:string; jobId?:string }
+export type DashboardStats = { totalCandidates:number; filteredCandidates:number; shortlisted:number; rejected:number; openPositions:number }
 export type PipelinePoint = { month:string; screened:number; shortlisted:number }
 export type Stat = { label:string; value:string; change:string; trend:'up'|'down'; icon:LucideIcon; tone:'blue'|'purple'|'slate' }
-export type Candidate = { id:number; name:string; role:string; location:string; experience:string; score:number; skills:string[]; status:'active'|'shortlisted'|'archived' }
-export type JobStatus = 'Open' | 'Closed' | 'Draft'
-export type Job = { id:number; title:string; department:string; location:string; employmentType:string; description:string; status:JobStatus; applicants:number }
-export type NotificationType = 'Candidates' | 'Applications' | 'Shortlisted' | 'Rejected'
-export type Notification = { id:number; type:NotificationType; title:string; message:string; createdAt:string; read:boolean }
+export type ResumeAnalysis = { matchScore:number; detectedSkills:string[]; yearsExperience:number; summary:string; strengths:string[]; weaknesses:string[] }
+export type CandidateQuery = { jobId?:string; minMatchScore?:number; skills?:string; locationType?:LocationType; status?:ResumeStatus; search?:string; sortBy?:'matchScore'|'name'|'experience'; page?:number; limit?:number }
+export type JobInput = Omit<Job, 'id'|'applicants'|'postedDate'>
+export type CandidateInput = Omit<Candidate, 'id'>
+export type AuditEntry = { id:string; action:string; resourceType:string; resourceId?:string; metadata?:unknown; createdAt:string; actor:{id:string;name:string;email:string} }
+export type PaginatedAudit = { data:AuditEntry[]; pagination:Pagination }
+export type Company = { id:string; name:string; website:string|null; location:string|null; size:string|null; createdAt:string }
+export type NotificationPreferences = { newCandidate:boolean; application:boolean; weeklyDigest:boolean; productUpdate:boolean }
+export type InterviewType = 'Phone'|'Video'|'On-site'
+export type Interview = { id:string; companyId:string; candidateId:string; interviewerId:string|null; interviewer:string; startsAt:string; date:string; time:string; type:InterviewType; locationOrLink:string|null; notes:string; createdAt:string; updatedAt:string; candidate:{id:string;name:string;positionApplied:string;jobId:string} }
+export type InterviewInput = { candidateId:string; date:string; time:string; interviewer:string; interviewerId?:string; type:InterviewType; locationOrLink?:string; notes:string }
