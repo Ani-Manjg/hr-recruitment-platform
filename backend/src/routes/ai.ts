@@ -30,9 +30,9 @@ async function extract(file:Express.Multer.File){
 }
 async function gemini(prompt:string){
   if(!config.GEMINI_API_KEY)throw new HttpError(503,'The AI analysis service is not configured.')
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(config.GEMINI_API_KEY)}`
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.GEMINI_MODEL)}:generateContent`
   let result:globalThis.Response
-  try{result=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json',temperature:0.2}})})}
+  try{result=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':config.GEMINI_API_KEY},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json'}})})}
   catch{throw new HttpError(503,'The AI analysis service is temporarily unavailable.')}
   if(!result.ok){console.error('Gemini error:',result.status,await result.text());throw new HttpError(result.status===429?429:503,'The AI analysis service is temporarily unavailable.')}
   const payload=await result.json() as {candidates?:Array<{content?:{parts?:Array<{text?:string}>}}>}

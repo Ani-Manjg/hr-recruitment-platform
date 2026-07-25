@@ -13,7 +13,7 @@ const schema=z.object({
   JWT_REFRESH_SECRET:z.string().min(32),
   TOKEN_HASH_SECRET:z.string().min(32),
   GEMINI_API_KEY:z.string().optional(),
-  GEMINI_MODEL:z.string().default('gemini-2.5-flash'),
+  GEMINI_MODEL:z.string().default('gemini-3.5-flash-lite'),
   CANDIDATE_RETENTION_DAYS:z.coerce.number().int().positive().default(365),
 })
 
