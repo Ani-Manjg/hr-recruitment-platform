@@ -70,10 +70,11 @@ router.put('/:id',async(request,response)=>{
   await audit(user,'candidate.updated','candidate',String(data.id));return response.json(candidateView(data))
 })
 router.patch('/:id/status',async(request,response)=>{
-  const{status}=z.object({status:z.enum(['Shortlisted','Rejected'])}).parse(request.body),user=(request as AuthRequest).auth
+  const{status}=z.object({status:z.enum(['Screened','Shortlisted','Rejected'])}).parse(request.body),user=(request as AuthRequest).auth
   const{data,error}=await db.from('candidates').update({resume_status:status,updated_at:new Date().toISOString()}).eq('id',request.params.id).eq('company_id',user.companyId).select().maybeSingle();dbError(error)
   if(!data)throw new HttpError(404,'The requested record was not found.')
-  await Promise.all([audit(user,`candidate.${status.toLowerCase()}`,'candidate',String(data.id)),notify(user.companyId,status==='Shortlisted'?'shortlist':'reject',`Candidate ${status.toLowerCase()}`,`${data.name} was marked as ${status}.`,undefined,String(data.id),String(data.job_id))])
+  const notificationType=status==='Shortlisted'?'shortlist':status==='Rejected'?'reject':'application'
+  await Promise.all([audit(user,`candidate.${status.toLowerCase()}`,'candidate',String(data.id)),notify(user.companyId,notificationType,`Candidate ${status.toLowerCase()}`,`${data.name} was marked as ${status}.`,undefined,String(data.id),String(data.job_id))])
   return response.json(candidateView(data))
 })
 router.delete('/:id',requireRole('ADMIN'),async(request,response)=>{

@@ -138,7 +138,7 @@ export const api={
     get:(id:string)=>request<Candidate>(`/api/candidates/${encodeURIComponent(id)}`,{authenticated:true}),
     create:(body:CandidateInput)=>request<Candidate>('/api/candidates',{method:'POST',body,authenticated:true}),
     update:(id:string,body:CandidateInput)=>request<Candidate>(`/api/candidates/${encodeURIComponent(id)}`,{method:'PUT',body,authenticated:true}),
-    updateStatus:(id:string,status:Extract<ResumeStatus,'Shortlisted'|'Rejected'>)=>request<Candidate>(`/api/candidates/${encodeURIComponent(id)}/status`,{method:'PATCH',body:{status},authenticated:true}),
+    updateStatus:(id:string,status:Extract<ResumeStatus,'Screened'|'Shortlisted'|'Rejected'>)=>request<Candidate>(`/api/candidates/${encodeURIComponent(id)}/status`,{method:'PATCH',body:{status},authenticated:true}),
     remove:(id:string)=>request<void>(`/api/candidates/${encodeURIComponent(id)}`,{method:'DELETE',authenticated:true}),
     purgeRetention:()=>request<{deleted:number;cutoff:string}>('/api/candidates/retention/purge',{method:'DELETE',authenticated:true}),
   },
