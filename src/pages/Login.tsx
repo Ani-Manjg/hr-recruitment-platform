@@ -1,7 +1,7 @@
 import { BrainCircuit, Eye, Loader2, LockKeyhole, Mail, Users } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { api, apiErrorMessage } from '../api/client'
+import { api, ApiError, apiErrorMessage } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 
 type Mode='login'|'register'|'forgot'|'reset'
@@ -39,7 +39,7 @@ export default function Login(){
         await api.auth.resetPassword({token:form.resetToken.trim(),newPassword:form.password})
         switchMode('login');setMessage('Password reset successfully. Sign in with your new password.')
       }
-    }catch(caught){setError(apiErrorMessage(caught))}finally{setLoading(false)}
+    }catch(caught){setError(mode==='login'&&caught instanceof ApiError&&caught.status===401?'Email or password is incorrect.':apiErrorMessage(caught))}finally{setLoading(false)}
   }
   const title=mode==='login'?'Sign in to your account':mode==='register'?'Start recruiting':mode==='forgot'?'Recover your account':'Choose a new password'
   return <main className="grid min-h-screen lg:grid-cols-2"><section className="relative hidden overflow-hidden bg-[#111b3d] p-14 text-white lg:flex lg:flex-col"><div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(37,99,235,.45),transparent_35%),radial-gradient(circle_at_75%_65%,rgba(124,58,237,.4),transparent_32%)]"/><div className="relative flex items-center gap-3"><div className="grad-accent grid size-11 place-items-center rounded-xl"><Users/></div><span className="text-xl font-bold">TalentFlow HR</span></div><div className="relative my-auto max-w-lg"><BrainCircuit className="mb-7 size-16 rounded-2xl bg-white/10 p-4 text-blue-300"/><h1 className="text-5xl font-bold leading-tight">Smarter hiring starts with better insights.</h1><p className="mt-6 text-lg leading-8 text-blue-100/70">Secure, collaborative recruitment powered by structured candidate analysis.</p></div></section>
