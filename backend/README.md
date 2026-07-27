@@ -57,3 +57,22 @@ Health Check Path: /health
 
 Set `FRONTEND_ORIGIN` to the exact Vercel production origin. After deployment,
 set Vercel's `VITE_API_URL` to the Render origin without `/api`, then redeploy.
+
+## Password-reset email
+
+Production password resets are delivered through Resend. Create a free Resend
+account, verify a domain (a dedicated subdomain such as `updates.example.com`
+is recommended), and create a sending API key. Then add these secret environment
+variables to the Render backend service:
+
+```text
+RESEND_API_KEY=re_...
+EMAIL_FROM=TalentFlow HR <password@updates.example.com>
+PASSWORD_RESET_URL=https://your-vercel-domain.vercel.app/login
+```
+
+`EMAIL_FROM` must use the domain verified in Resend. Do not put the Resend API
+key in Vercel or in any `VITE_` variable; it belongs only in the Render backend.
+After saving the variables, redeploy Render and request a reset from the login
+page. The emailed link expires after 60 minutes, is single-use, and revokes
+existing refresh sessions when the password changes.

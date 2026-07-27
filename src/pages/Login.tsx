@@ -10,7 +10,7 @@ export default function Login(){
   const invitationToken=searchParams.get('invitationToken')||undefined
   const initialResetToken=searchParams.get('resetToken')||searchParams.get('token')||''
   const[mode,setMode]=useState<Mode>(initialResetToken?'reset':invitationToken?'register':'login')
-  const[form,setForm]=useState({email:'',password:'',name:'',companyName:'',resetToken:initialResetToken})
+  const[form,setForm]=useState({email:'',password:'',confirmPassword:'',name:'',companyName:'',resetToken:initialResetToken})
   const[show,setShow]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(searchParams.get('passwordChanged')?'Password changed. Sign in with your new password.':''),[developmentToken,setDevelopmentToken]=useState('')
   if(isAuthenticated)return <Navigate to="/" replace/>
   const update=(field:keyof typeof form,value:string)=>setForm(current=>({...current,[field]:value}))
@@ -19,6 +19,7 @@ export default function Login(){
     event.preventDefault();setError('');setMessage('')
     if(mode!=='reset'&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())){setError('Enter a valid email address.');return}
     if(mode==='register'||mode==='reset'){const passwordError=validatePassword(form.password);if(passwordError){setError(passwordError);return}}
+    if(mode==='reset'&&form.password!==form.confirmPassword){setError('Passwords do not match.');return}
     if(mode==='login'&&!form.password){setError('Password is required.');return}
     if(mode==='register'&&(!form.name.trim()||(!invitationToken&&!form.companyName.trim()))){setError(invitationToken?'Name is required.':'Name and company name are required.');return}
     if(mode==='reset'&&!form.resetToken.trim()){setError('A password-reset token is required.');return}
@@ -33,7 +34,7 @@ export default function Login(){
         navigate('/',{replace:true})
       }else if(mode==='forgot'){
         const result=await api.auth.forgotPassword(form.email.trim())
-        setMessage('If an account exists for that email, password reset instructions have been created.')
+        setMessage('If an account exists for that email, a reset link has been sent. Check your inbox and spam folder.')
         setDevelopmentToken(result.developmentResetToken||'')
       }else{
         await api.auth.resetPassword({token:form.resetToken.trim(),newPassword:form.password})
@@ -49,6 +50,7 @@ export default function Login(){
         {mode==='register'&&<><Field label="Full name" value={form.name} onChange={value=>update('name',value)}/>{!invitationToken&&<Field label="Company name" value={form.companyName} onChange={value=>update('companyName',value)}/>} {invitationToken&&<p className="rounded-lg bg-blue-50 p-3 text-sm text-blue-700">You are joining through a secure invitation.</p>}</>}
         {mode!=='reset'&&<label className="block"><span className="mb-2 block text-sm font-semibold">Work email</span><span className="flex h-12 items-center gap-3 rounded-xl border px-4 focus-within:border-blue-500"><Mail className="size-4 text-slate-400"/><input value={form.email} onChange={event=>update('email',event.target.value)} type="email" autoComplete="email" className="w-full outline-none" placeholder="you@company.com"/></span></label>}
         {(mode==='login'||mode==='register'||mode==='reset')&&<label className="block"><span className="mb-2 block text-sm font-semibold">{mode==='reset'?'New password':'Password'}</span><span className="flex h-12 items-center gap-3 rounded-xl border px-4 focus-within:border-blue-500"><LockKeyhole className="size-4 text-slate-400"/><input value={form.password} onChange={event=>update('password',event.target.value)} type={show?'text':'password'} autoComplete={mode==='login'?'current-password':'new-password'} className="w-full outline-none" placeholder={mode==='login'?'Enter your password':'12–128 characters with mixed types'}/><button type="button" onClick={()=>setShow(value=>!value)}><Eye className="size-4 text-slate-400"/></button></span>{mode!=='login'&&<span className="mt-2 block text-xs text-slate-500">Uppercase, lowercase, number, and special character required.</span>}</label>}
+        {mode==='reset'&&<label className="block"><span className="mb-2 block text-sm font-semibold">Confirm new password</span><span className="flex h-12 items-center gap-3 rounded-xl border px-4 focus-within:border-blue-500"><LockKeyhole className="size-4 text-slate-400"/><input value={form.confirmPassword} onChange={event=>update('confirmPassword',event.target.value)} type={show?'text':'password'} autoComplete="new-password" className="w-full outline-none" placeholder="Enter the new password again"/></span></label>}
         {mode==='reset'&&!initialResetToken&&<Field label="Reset token" value={form.resetToken} onChange={value=>update('resetToken',value)}/>}
         {error&&<p role="alert" className="rounded-lg bg-rose-50 p-3 text-sm font-medium text-rose-700">{error}</p>}{message&&<p className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p>}
         {developmentToken&&<button type="button" onClick={()=>{update('resetToken',developmentToken);switchMode('reset')}} className="w-full rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">Use development reset token</button>}

@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
 import { config } from '../config.js'
 import { db } from '../db.js'
+import { sendPasswordResetEmail } from '../email.js'
 import { HttpError } from '../errors.js'
 import { authenticate, requireRole } from '../middleware.js'
 import { accessToken, hashToken, opaqueToken, passwordHash, passwordMatches, safeEqual } from '../security.js'
@@ -121,11 +122,21 @@ router.put('/change-password',authenticate,async(request,response)=>{
 })
 
 router.post('/forgot-password',authLimiter,async(request,response)=>{
-  const body=z.object({email}).parse(request.body),message='If an account exists for that email, password reset instructions have been created.'
-  const{data:user}=await db.from('users').select('id').eq('email',body.email).maybeSingle()
+  const body=z.object({email}).parse(request.body),message='If an account exists for that email, password reset instructions have been sent.'
+  const{data:user}=await db.from('users').select('id,email').eq('email',body.email).maybeSingle()
   if(!user)return response.json({message})
   const token=opaqueToken()
-  await db.from('password_resets').insert({user_id:user.id,token_hash:hashToken(token),expires_at:new Date(Date.now()+60*60*1000).toISOString()})
+  await db.from('password_resets').update({used_at:new Date().toISOString()}).eq('user_id',user.id).is('used_at',null)
+  const{data:reset,error}=await db.from('password_resets').insert({user_id:user.id,token_hash:hashToken(token),expires_at:new Date(Date.now()+60*60*1000).toISOString()}).select('id').single()
+  dbError(error)
+  if(config.NODE_ENV!=='development'){
+    try{await sendPasswordResetEmail(String(user.email),token)}
+    catch(error){
+      await db.from('password_resets').delete().eq('id',reset?.id)
+      console.error('Password reset email failed:',error)
+      throw new HttpError(503,'Password reset email is temporarily unavailable. Please try again shortly.')
+    }
+  }
   return response.json(config.NODE_ENV==='development'?{message,developmentResetToken:token}:{message})
 })
 
