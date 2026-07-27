@@ -6,7 +6,7 @@ import type { ExtractedProfile, Job, LocationType, ResumeAnalysis } from '../typ
 
 const accepted=['pdf','docx'],maxSize=10*1024*1024
 type ProfileField=Exclude<keyof ExtractedProfile,'languages'>|'languages'
-const emptyForm={name:'',email:'',phone:'',education:'',languages:'',location:'',locationType:'Remote' as LocationType,availability:'',portfolio:'',notes:''}
+const emptyForm={name:'',email:'',phone:'',education:'',languages:'',location:'',locationType:'Remote' as LocationType,portfolio:'',notes:''}
 const emptyAutoFilled:Record<ProfileField,boolean>={name:false,email:false,phone:false,education:false,languages:false,location:false}
 
 export default function AIAnalysis(){
@@ -46,7 +46,7 @@ export default function AIAnalysis(){
       await api.ai.saveCandidate({
         jobId,name:form.name.trim(),email:form.email.trim(),phone:form.phone.trim(),analysis,
         education:form.education.trim(),languages:split(form.languages),location:form.location.trim(),
-        locationType:form.locationType,availability:form.availability.trim(),experienceTimeline:[],
+        locationType:form.locationType,availability:'',experienceTimeline:[],
         certificates:[],portfolio:form.portfolio.trim()||undefined,notes:form.notes.trim(),
       })
       setSuccess('Analyzed candidate saved to the recruitment pipeline.')
@@ -103,7 +103,6 @@ export default function AIAnalysis(){
           <Field label="Languages" autoFilled={autoFilled.languages} value={form.languages} onChange={value=>update('languages',value)}/>
           <Field label="Location" autoFilled={autoFilled.location} value={form.location} onChange={value=>update('location',value)}/>
           <label className="text-sm font-semibold">Location type<select value={form.locationType} onChange={event=>setForm(current=>({...current,locationType:event.target.value as LocationType}))} className="mt-1 w-full rounded-xl border px-3 py-2"><option>Remote</option><option>Hybrid</option><option>On-site</option></select></label>
-          <Field label="Availability" value={form.availability} onChange={value=>update('availability',value)}/>
           <Field label="Portfolio (optional)" required={false} value={form.portfolio} onChange={value=>update('portfolio',value)}/>
         </div>
         <label className="mt-4 block text-sm font-semibold">Notes<textarea value={form.notes} onChange={event=>update('notes',event.target.value)} className="mt-1 min-h-24 w-full rounded-xl border p-3 font-normal"/></label>
