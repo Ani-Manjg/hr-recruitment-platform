@@ -60,19 +60,19 @@ set Vercel's `VITE_API_URL` to the Render origin without `/api`, then redeploy.
 
 ## Password-reset email
 
-Production password resets are delivered through Resend. Create a free Resend
-account, verify a domain (a dedicated subdomain such as `updates.example.com`
-is recommended), and create a sending API key. Then add these secret environment
-variables to the Render backend service:
+Production password resets are delivered through Brevo. Create a free Brevo
+account, add and verify a sender email address, and create an API key. Then add
+these environment variables to the Render backend service:
 
 ```text
-RESEND_API_KEY=re_...
-EMAIL_FROM=TalentFlow HR <password@updates.example.com>
+BREVO_API_KEY=xkeysib-...
+EMAIL_FROM=your-verified-sender@example.com
+EMAIL_FROM_NAME=TalentFlow HR
 PASSWORD_RESET_URL=https://your-vercel-domain.vercel.app/login
 ```
 
-`EMAIL_FROM` must use the domain verified in Resend. Do not put the Resend API
-key in Vercel or in any `VITE_` variable; it belongs only in the Render backend.
+`EMAIL_FROM` must exactly match a sender verified in Brevo. Do not put the Brevo
+API key in Vercel or in any `VITE_` variable; it belongs only in the Render backend.
 After saving the variables, redeploy Render and request a reset from the login
 page. The emailed link expires after 60 minutes, is single-use, and revokes
 existing refresh sessions when the password changes.

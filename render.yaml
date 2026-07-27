@@ -26,10 +26,12 @@ services:
         generateValue: true
       - key: TOKEN_HASH_SECRET
         generateValue: true
-      - key: RESEND_API_KEY
+      - key: BREVO_API_KEY
         sync: false
       - key: EMAIL_FROM
         sync: false
+      - key: EMAIL_FROM_NAME
+        value: TalentFlow HR
       - key: PASSWORD_RESET_URL
         sync: false
       - key: GEMINI_API_KEY
