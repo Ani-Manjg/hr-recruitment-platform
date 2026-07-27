@@ -2,24 +2,121 @@ import { BrainCircuit, CheckCircle2, FileCheck2, Loader2, UploadCloud, XCircle }
 import { type ChangeEvent, type DragEvent, type FormEvent, useEffect, useRef, useState } from 'react'
 import { api, apiErrorMessage } from '../api/client'
 import Badge from '../components/ui/Badge'
-import type { Job, LocationType, ResumeAnalysis } from '../types'
+import type { ExtractedProfile, Job, LocationType, ResumeAnalysis } from '../types'
 
 const accepted=['pdf','docx'],maxSize=10*1024*1024
+type ProfileField=Exclude<keyof ExtractedProfile,'languages'>|'languages'
+const emptyForm={name:'',email:'',phone:'',education:'',languages:'',location:'',locationType:'Remote' as LocationType,availability:'',portfolio:'',notes:''}
+const emptyAutoFilled:Record<ProfileField,boolean>={name:false,email:false,phone:false,education:false,languages:false,location:false}
+
 export default function AIAnalysis(){
   const[jobs,setJobs]=useState<Job[]>([]),[jobId,setJobId]=useState(''),[analysis,setAnalysis]=useState<ResumeAnalysis|null>(null)
   const[fileName,setFileName]=useState(''),[loading,setLoading]=useState(false),[saving,setSaving]=useState(false),[dragging,setDragging]=useState(false),[error,setError]=useState(''),[success,setSuccess]=useState('')
-  const[form,setForm]=useState({name:'',email:'',phone:'',education:'',languages:'',location:'',locationType:'Remote' as LocationType,availability:'',portfolio:'',notes:''})
+  const[form,setForm]=useState(emptyForm),[autoFilled,setAutoFilled]=useState(emptyAutoFilled)
   const inputRef=useRef<HTMLInputElement>(null)
+
   useEffect(()=>{api.jobs.list({status:'Open'}).then(values=>{setJobs(values);if(values[0])setJobId(values[0].id)}).catch(caught=>setError(apiErrorMessage(caught)))},[])
-  async function analyze(file:File){const extension=file.name.split('.').pop()?.toLowerCase();if(!extension||!accepted.includes(extension)){setError('Choose a PDF or DOCX file. Convert legacy DOC files before uploading.');return}if(file.size>maxSize){setError('The maximum file size is 10 MB.');return}if(!jobId){setError('Select a job before analyzing the CV.');return}setLoading(true);setError('');setSuccess('');setFileName(file.name);try{setAnalysis(await api.ai.analyzeResume(file,jobId))}catch(caught){setAnalysis(null);setError(apiErrorMessage(caught))}finally{setLoading(false)}}
+
+  async function analyze(file:File){
+    const extension=file.name.split('.').pop()?.toLowerCase()
+    if(!extension||!accepted.includes(extension)){setError('Choose a PDF or DOCX file. Convert legacy DOC files before uploading.');return}
+    if(file.size>maxSize){setError('The maximum file size is 10 MB.');return}
+    if(!jobId){setError('Select a job before analyzing the CV.');return}
+    setLoading(true);setError('');setSuccess('');setFileName(file.name)
+    try{
+      const result=await api.ai.analyzeResume(file,jobId)
+      const profile=result.extractedProfile
+      const languages=profile.languages.join(', ')
+      setAnalysis(result)
+      setForm(current=>({...current,name:profile.name||'',email:profile.email||'',phone:profile.phone||'',education:profile.education||'',languages,location:profile.location||''}))
+      setAutoFilled({
+        name:Boolean(profile.name),email:Boolean(profile.email),phone:Boolean(profile.phone),
+        education:Boolean(profile.education),languages:profile.languages.length>0,location:Boolean(profile.location),
+      })
+    }catch(caught){
+      setAnalysis(null);setAutoFilled(emptyAutoFilled);setError(apiErrorMessage(caught))
+    }finally{setLoading(false)}
+  }
+
   const fileChange=(event:ChangeEvent<HTMLInputElement>)=>{const file=event.target.files?.[0];if(file)void analyze(file);event.target.value=''}
   const drop=(event:DragEvent<HTMLDivElement>)=>{event.preventDefault();setDragging(false);const file=event.dataTransfer.files?.[0];if(file)void analyze(file)}
-  async function save(event:FormEvent){event.preventDefault();if(!analysis)return;setSaving(true);setError('');try{await api.ai.saveCandidate({jobId,name:form.name.trim(),email:form.email.trim(),phone:form.phone.trim(),analysis,education:form.education.trim(),languages:split(form.languages),location:form.location.trim(),locationType:form.locationType,availability:form.availability.trim(),experienceTimeline:[],certificates:[],portfolio:form.portfolio.trim()||undefined,notes:form.notes.trim()});setSuccess('Analyzed candidate saved to the recruitment pipeline.')}catch(caught){setError(apiErrorMessage(caught))}finally{setSaving(false)}}
-  return <main><section className="bg-gradient-to-r from-slate-900 via-blue-950 to-violet-950 px-8 py-12 text-white"><p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-blue-300"><BrainCircuit/>AI Intelligence Suite</p><h1 className="mt-3 text-3xl font-bold">Talent AI Analysis</h1><p className="mt-2 text-slate-300">Upload a CV and evaluate it against a real job specification.</p></section><section className="grid gap-6 p-8 lg:grid-cols-[.8fr_2fr]"><div><label className="mb-3 block text-sm font-semibold">Analyze against job<select value={jobId} onChange={event=>setJobId(event.target.value)} className="mt-2 w-full rounded-xl border bg-white px-3 py-3 text-slate-800"><option value="">Select an open job</option>{jobs.map(job=><option key={job.id} value={job.id}>{job.title}</option>)}</select></label><div onDragEnter={event=>{event.preventDefault();setDragging(true)}} onDragOver={event=>event.preventDefault()} onDragLeave={()=>setDragging(false)} onDrop={drop} className={`card flex min-h-64 flex-col items-center justify-center border-2 border-dashed p-8 text-center ${dragging?'border-blue-500 bg-blue-50':'border-slate-200'}`}><UploadCloud className="size-12 text-blue-600"/><h2 className="mt-5 text-xl font-bold">Upload New CV</h2><p className="muted mt-2">PDF or DOCX · maximum 10 MB</p><input ref={inputRef} type="file" accept=".pdf,.docx" onChange={fileChange} className="sr-only"/><button onClick={()=>inputRef.current?.click()} disabled={loading||!jobId} className="grad-accent mt-6 flex w-full items-center justify-center gap-2 rounded-lg py-3 font-semibold text-white disabled:opacity-50">{loading&&<Loader2 className="size-4 animate-spin"/>}{loading?'Analyzing…':'Select File'}</button></div></div>
-    <div className="card p-8"><h2 className="text-2xl font-bold">AI Executive Summary</h2>{loading?<p className="mt-8 flex gap-3 text-slate-500"><Loader2 className="size-5 animate-spin"/>Analyzing {fileName}…</p>:analysis?<div className="mt-6 space-y-6"><div className="rounded-xl bg-emerald-50 p-5"><p className="flex items-center gap-2 font-semibold text-emerald-800"><FileCheck2 className="size-5"/>Analysis ready · {analysis.matchScore}% match</p><p className="mt-3 text-sm leading-6 text-emerald-800">{analysis.summary}</p></div><div><h3 className="font-semibold">Detected skills</h3><div className="mt-2 flex flex-wrap gap-2">{analysis.detectedSkills.map(skill=><Badge key={skill} className="bg-blue-50 text-blue-700">{skill}</Badge>)}</div></div><div className="grid gap-5 sm:grid-cols-2"><div><h3 className="font-semibold">Strengths</h3>{analysis.strengths.map(item=><p key={item} className="mt-2 flex gap-2 text-sm text-slate-600"><CheckCircle2 className="size-4 shrink-0 text-emerald-500"/>{item}</p>)}</div><div><h3 className="font-semibold">Weaknesses</h3>{analysis.weaknesses.map(item=><p key={item} className="mt-2 flex gap-2 text-sm text-slate-600"><XCircle className="size-4 shrink-0 text-amber-500"/>{item}</p>)}</div></div></div>:<p className="mt-5 leading-7 text-slate-600">Select a job and upload a candidate CV to generate a structured analysis.</p>}</div></section>
-    {error&&<p role="alert" className="mx-8 mb-5 rounded-xl bg-rose-50 p-4 text-sm text-rose-700">{error}</p>}{success&&<p className="mx-8 mb-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-700">{success}</p>}
-    {analysis&&<section className="px-8 pb-8"><form onSubmit={save} className="card p-6 sm:p-8"><h2 className="text-xl font-bold">Save analyzed candidate</h2><p className="muted mt-1">Complete the candidate’s contact and profile information.</p><div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><Field label="Full name" value={form.name} onChange={value=>setForm(current=>({...current,name:value}))}/><Field label="Email" type="email" value={form.email} onChange={value=>setForm(current=>({...current,email:value}))}/><Field label="Phone" value={form.phone} onChange={value=>setForm(current=>({...current,phone:value}))}/><Field label="Education" value={form.education} onChange={value=>setForm(current=>({...current,education:value}))}/><Field label="Languages" value={form.languages} onChange={value=>setForm(current=>({...current,languages:value}))}/><Field label="Location" value={form.location} onChange={value=>setForm(current=>({...current,location:value}))}/><label className="text-sm font-semibold">Location type<select value={form.locationType} onChange={event=>setForm(current=>({...current,locationType:event.target.value as LocationType}))} className="mt-1 w-full rounded-xl border px-3 py-2"><option>Remote</option><option>Hybrid</option><option>On-site</option></select></label><Field label="Availability" value={form.availability} onChange={value=>setForm(current=>({...current,availability:value}))}/><Field label="Portfolio (optional)" required={false} value={form.portfolio} onChange={value=>setForm(current=>({...current,portfolio:value}))}/></div><label className="mt-4 block text-sm font-semibold">Notes<textarea value={form.notes} onChange={event=>setForm(current=>({...current,notes:event.target.value}))} className="mt-1 min-h-24 w-full rounded-xl border p-3 font-normal"/></label><button disabled={saving} className="grad-accent mt-5 rounded-xl px-5 py-3 font-semibold text-white">{saving?'Saving…':'Save candidate'}</button></form></section>}
+  async function save(event:FormEvent){
+    event.preventDefault();if(!analysis)return;setSaving(true);setError('')
+    try{
+      await api.ai.saveCandidate({
+        jobId,name:form.name.trim(),email:form.email.trim(),phone:form.phone.trim(),analysis,
+        education:form.education.trim(),languages:split(form.languages),location:form.location.trim(),
+        locationType:form.locationType,availability:form.availability.trim(),experienceTimeline:[],
+        certificates:[],portfolio:form.portfolio.trim()||undefined,notes:form.notes.trim(),
+      })
+      setSuccess('Analyzed candidate saved to the recruitment pipeline.')
+    }catch(caught){setError(apiErrorMessage(caught))}finally{setSaving(false)}
+  }
+  const update=(field:Exclude<keyof typeof form,'locationType'>,value:string)=>setForm(current=>({...current,[field]:value}))
+
+  return <main>
+    <section className="bg-gradient-to-r from-slate-900 via-blue-950 to-violet-950 px-8 py-12 text-white">
+      <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-blue-300"><BrainCircuit/>AI Intelligence Suite</p>
+      <h1 className="mt-3 text-3xl font-bold">Talent AI Analysis</h1>
+      <p className="mt-2 text-slate-300">Upload a CV and evaluate it against a real job specification.</p>
+    </section>
+    <section className="grid gap-6 p-8 lg:grid-cols-[.8fr_2fr]">
+      <div>
+        <label className="mb-3 block text-sm font-semibold">Analyze against job
+          <select value={jobId} onChange={event=>setJobId(event.target.value)} className="mt-2 w-full rounded-xl border bg-white px-3 py-3 text-slate-800">
+            <option value="">Select an open job</option>{jobs.map(job=><option key={job.id} value={job.id}>{job.title}</option>)}
+          </select>
+        </label>
+        <div onDragEnter={event=>{event.preventDefault();setDragging(true)}} onDragOver={event=>event.preventDefault()} onDragLeave={()=>setDragging(false)} onDrop={drop} className={`card flex min-h-64 flex-col items-center justify-center border-2 border-dashed p-8 text-center ${dragging?'border-blue-500 bg-blue-50':'border-slate-200'}`}>
+          <UploadCloud className="size-12 text-blue-600"/><h2 className="mt-5 text-xl font-bold">Upload New CV</h2>
+          <p className="muted mt-2">PDF or DOCX · maximum 10 MB</p>
+          <input ref={inputRef} type="file" accept=".pdf,.docx" onChange={fileChange} className="sr-only"/>
+          <button onClick={()=>inputRef.current?.click()} disabled={loading||!jobId} className="grad-accent mt-6 flex w-full items-center justify-center gap-2 rounded-lg py-3 font-semibold text-white disabled:opacity-50">
+            {loading&&<Loader2 className="size-4 animate-spin"/>}{loading?'Analyzing…':'Select File'}
+          </button>
+        </div>
+      </div>
+      <div className="card p-8">
+        <h2 className="text-2xl font-bold">AI Executive Summary</h2>
+        {loading?<p className="mt-8 flex gap-3 text-slate-500"><Loader2 className="size-5 animate-spin"/>Analyzing {fileName}…</p>:analysis?
+          <div className="mt-6 space-y-6">
+            <div className="rounded-xl bg-emerald-50 p-5"><p className="flex items-center gap-2 font-semibold text-emerald-800"><FileCheck2 className="size-5"/>Analysis ready · {analysis.matchScore}% match</p><p className="mt-3 text-sm leading-6 text-emerald-800">{analysis.summary}</p></div>
+            <div><h3 className="font-semibold">Detected skills</h3><div className="mt-2 flex flex-wrap gap-2">{analysis.detectedSkills.map(skill=><Badge key={skill} className="bg-blue-50 text-blue-700">{skill}</Badge>)}</div></div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div><h3 className="font-semibold">Strengths</h3>{analysis.strengths.map(item=><p key={item} className="mt-2 flex gap-2 text-sm text-slate-600"><CheckCircle2 className="size-4 shrink-0 text-emerald-500"/>{item}</p>)}</div>
+              <div><h3 className="font-semibold">Weaknesses</h3>{analysis.weaknesses.map(item=><p key={item} className="mt-2 flex gap-2 text-sm text-slate-600"><XCircle className="size-4 shrink-0 text-amber-500"/>{item}</p>)}</div>
+            </div>
+          </div>:<p className="mt-5 leading-7 text-slate-600">Select a job and upload a candidate CV to generate a structured analysis.</p>}
+      </div>
+    </section>
+    {error&&<p role="alert" className="mx-8 mb-5 rounded-xl bg-rose-50 p-4 text-sm text-rose-700">{error}</p>}
+    {success&&<p className="mx-8 mb-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-700">{success}</p>}
+    {analysis&&<section className="px-8 pb-8">
+      <form onSubmit={save} className="card p-6 sm:p-8">
+        <h2 className="text-xl font-bold">Save analyzed candidate</h2>
+        <p className="muted mt-1">Review the auto-filled résumé details and complete anything missing.</p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Full name" autoFilled={autoFilled.name} value={form.name} onChange={value=>update('name',value)}/>
+          <Field label="Email" type="email" autoFilled={autoFilled.email} value={form.email} onChange={value=>update('email',value)}/>
+          <Field label="Phone" autoFilled={autoFilled.phone} value={form.phone} onChange={value=>update('phone',value)}/>
+          <Field label="Education" autoFilled={autoFilled.education} value={form.education} onChange={value=>update('education',value)}/>
+          <Field label="Languages" autoFilled={autoFilled.languages} value={form.languages} onChange={value=>update('languages',value)}/>
+          <Field label="Location" autoFilled={autoFilled.location} value={form.location} onChange={value=>update('location',value)}/>
+          <label className="text-sm font-semibold">Location type<select value={form.locationType} onChange={event=>setForm(current=>({...current,locationType:event.target.value as LocationType}))} className="mt-1 w-full rounded-xl border px-3 py-2"><option>Remote</option><option>Hybrid</option><option>On-site</option></select></label>
+          <Field label="Availability" value={form.availability} onChange={value=>update('availability',value)}/>
+          <Field label="Portfolio (optional)" required={false} value={form.portfolio} onChange={value=>update('portfolio',value)}/>
+        </div>
+        <label className="mt-4 block text-sm font-semibold">Notes<textarea value={form.notes} onChange={event=>update('notes',event.target.value)} className="mt-1 min-h-24 w-full rounded-xl border p-3 font-normal"/></label>
+        <button disabled={saving} className="grad-accent mt-5 rounded-xl px-5 py-3 font-semibold text-white">{saving?'Saving…':'Save candidate'}</button>
+      </form>
+    </section>}
   </main>
 }
+
 const split=(value:string)=>value.split(',').map(item=>item.trim()).filter(Boolean)
-function Field({label,value,onChange,type='text',required=true}:{label:string;value:string;onChange:(value:string)=>void;type?:string;required?:boolean}){return <label className="text-sm font-semibold">{label}<input required={required} type={type} value={value} onChange={event=>onChange(event.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2 font-normal"/></label>}
+function Field({label,value,onChange,type='text',required=true,autoFilled=false}:{label:string;value:string;onChange:(value:string)=>void;type?:string;required?:boolean;autoFilled?:boolean}){
+  return <label className="text-sm font-semibold">
+    <span className="flex items-center justify-between gap-2">{label}{autoFilled&&<span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700">Auto-filled</span>}</span>
+    <input required={required} type={type} value={value} onChange={event=>onChange(event.target.value)} className={`mt-1 w-full rounded-xl border px-3 py-2 font-normal outline-none focus:border-blue-500 ${autoFilled?'border-violet-300 bg-violet-50/40':'border-slate-200'}`}/>
+  </label>
+}
