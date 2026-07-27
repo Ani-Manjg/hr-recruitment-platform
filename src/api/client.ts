@@ -23,12 +23,12 @@ export class ApiError extends Error{
 
 export function setApiSession(nextAccessToken:string,nextCsrfToken:string){
   accessToken=nextAccessToken;csrfToken=nextCsrfToken
-  sessionStorage.setItem(CSRF_STORAGE_KEY,nextCsrfToken)
+  localStorage.setItem(CSRF_STORAGE_KEY,nextCsrfToken)
   sessionListeners.forEach(listener=>listener({accessToken:nextAccessToken,csrfToken:nextCsrfToken}))
 }
 export function seedCsrfToken(value:string|null){csrfToken=value}
 export function clearApiSession(){
-  accessToken=null;csrfToken=null;sessionStorage.removeItem(CSRF_STORAGE_KEY)
+  accessToken=null;csrfToken=null;localStorage.removeItem(CSRF_STORAGE_KEY)
   sessionListeners.forEach(listener=>listener(null))
 }
 export function subscribeApiSession(listener:SessionListener){sessionListeners.add(listener);return()=>{sessionListeners.delete(listener)}}
